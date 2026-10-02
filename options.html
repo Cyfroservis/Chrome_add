@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Автоприховування при простої</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; max-width: 480px; margin: 30px auto; }
+    label { display: block; margin: 12px 0; }
+    input[type=number] { width: 70px; }
+    button { padding: 6px 18px; margin-top: 10px; }
+    #status { margin-left: 12px; color: green; }
+  </style>
+</head>
+<body>
+  <h2>Автоприховування при простої</h2>
+  <label>Простій, хвилин: <input type="number" id="idleMinutes" min="1" step="1"></label>
+  <label><input type="checkbox" id="collapseGroups"> Згортати групи вкладок</label>
+  <label><input type="checkbox" id="minimizeWindows"> Згортати вікна Chrome</label>
+  <label><input type="checkbox" id="switchToLastTab"> Перемикати на крайню праву вкладку при згортанні</label>
+  <label><input type="checkbox" id="restoreGroups"> Відновлювати групи вкладок при поверненні (рух миші/клавіатура)</label>
+  <label><input type="checkbox" id="restoreWindows"> Відновлювати вікно Chrome при поверненні (рух миші/клавіатура)</label>
+  <label>Не відновлювати, якщо простій довший за (хвилин, 0 = завжди відновлювати): <input type="number" id="noRestoreAfterMinutes" min="0" step="1"></label>
+  <button id="save">Зберегти</button><span id="status"></span>
+  <script src="options.js"></script>
+</body>
+</html>

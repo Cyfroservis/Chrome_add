@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Чистка Gmail</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; width: 340px; margin: 10px; font-size: 13px; }
+    h3 { margin: 0 0 8px; }
+    label { display: block; margin: 6px 0; }
+    input[type=number] { width: 50px; }
+    button { padding: 5px 12px; margin: 6px 6px 0 0; }
+    #log { margin-top: 10px; white-space: pre-wrap; min-height: 40px; }
+    #err { color: #b00020; }
+    a { color: #1a0dab; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h3>Чистка Gmail</h3>
+  <label><input type="checkbox" id="catSpam" checked> Спам</label>
+  <label><input type="checkbox" id="catPromo"> Промоакції, старші за
+    <input type="number" id="promoDays" min="1" value="30"> дн.</label>
+  <label><input type="checkbox" id="catSocial"> Соцмережі, старші за
+    <input type="number" id="socialDays" min="1" value="30"> дн.</label>
+  <div>Листи із зірочкою не чіпаються. Видалення = переміщення в «Кошик» (Gmail сам очистить його через 30 днів).</div>
+  <button id="count">Порахувати</button>
+  <button id="trash" disabled>Перенести в кошик</button>
+  <div id="log"></div>
+  <div id="err"></div>
+  <p><a id="opts">Налаштування автозгортання при простої</a></p>
+  <script src="popup.js"></script>
+</body>
+</html>
