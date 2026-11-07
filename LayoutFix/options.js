@@ -1,5 +1,5 @@
 /* Автор: Сивак Микола Володимирович, +380961179898, Цифросервіс */
-const DEFAULTS = { enabled: true, langs: null, delaySec: 2.5, minLetters: 5, excluded: '', mode: 'chip' };
+const DEFAULTS = { enabled: true, langs: null, pauseSec: 0.8, minLetters: 5, excluded: '', mode: 'chip' };
 const LAYOUTS = globalThis.LFX_LAYOUTS;
 
 function $(id) { return document.getElementById(id); }
@@ -51,7 +51,7 @@ async function load() {
   $('enabled').checked = s.enabled;
   const modeRadio = document.querySelector('input[name="mode"][value="' + (s.mode === 'auto' ? 'auto' : 'chip') + '"]');
   if (modeRadio) modeRadio.checked = true;
-  $('delaySec').value = s.delaySec;
+  $('delaySec').value = s.pauseSec;
   $('minLetters').value = s.minLetters;
   $('excluded').value = s.excluded;
 }
@@ -64,7 +64,7 @@ async function save() {
     excluded: $('excluded').value
   };
   const d = parseFloat($('delaySec').value);
-  if (d >= 1 && d <= 10) o.delaySec = d;
+  if (d >= 0.3 && d <= 10) o.pauseSec = d;
   const m = parseInt($('minLetters').value, 10);
   if (m >= 3 && m <= 30) o.minLetters = m;
   await chrome.storage.local.set(o);
@@ -76,5 +76,18 @@ async function save() {
 });
 
 document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener('change', save));
+
+// Гаряча клавіша: показуємо поточну і відкриваємо сторінку Chrome, де її можна змінити
+async function showHotkey() {
+  try {
+    const cmds = await chrome.commands.getAll();
+    const c = cmds.find((x) => x.name === 'convert-selection');
+    $('hotkey').textContent = c && c.shortcut ? c.shortcut : 'не задано';
+  } catch (e) {
+    $('hotkey').textContent = 'не задано';
+  }
+}
+$('hotkeyBtn').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
+showHotkey();
 
 load();

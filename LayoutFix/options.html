@@ -7,34 +7,64 @@
   <style>
     :root {
       color-scheme: light dark;
-      --bg: #dcefdc; --fg: #1b3a26; --muted: #4a6b55; --field: #eaf6ea; --line: #98c1a1; --accent: #2e7d4f; --accent-fg: #f1fff5; --ok: #1b7a3a;
+      --bg: #dcefdc; --fg: #1b3a26; --muted: #4a6b55; --field: #eaf6ea; --line: #98c1a1; --accent: #2e7d4f; --accent-fg: #f1fff5; --ok: #1b7a3a; --danger: #a33a3a;
     }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #12231a; --fg: #dcefe0; --muted: #9db8a5; --field: #1a3024; --line: #335a41; --accent: #5fbf86; --accent-fg: #0d1c13; --ok: #7bd88f; }
+      :root { --bg: #12231a; --fg: #dcefe0; --muted: #9db8a5; --field: #1a3024; --line: #335a41; --accent: #5fbf86; --accent-fg: #0d1c13; --ok: #7bd88f; --danger: #e08a8a; }
     }
     * { box-sizing: border-box; }
     body { font: 12.5px/1.4 "Segoe UI", system-ui, Arial, sans-serif; background: var(--bg); color: var(--fg); width: 340px; margin: 0 auto; padding: 10px; }
     h1 { font-size: 13.5px; margin: 0 0 8px; }
-    h2 { font-size: 13px; margin: 0 0 6px; }
-    section { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
     .field { display: flex; align-items: center; gap: 8px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; margin: 0; }
+    .field + .field { margin-top: 6px; }
     .status { cursor: pointer; }
+    .status span:last-child { flex: 1; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
     .status:has(input:checked) .dot { background: var(--accent); }
-    .status span:last-child { flex: 1; }
-    .langs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-    .langs label { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; margin: 0; cursor: pointer; }
-    .langs label:has(input:checked) { border-color: var(--accent); }
-    .tag { flex-basis: 100%; padding-left: 20px; font-size: 10.5px; color: var(--muted); line-height: 1.15; }
-    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; }
-    input[type=number], textarea { background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; font: inherit; padding: 4px 8px; }
-    input[type=number] { width: 58px; }
+    button { font: inherit; cursor: pointer; padding: 3px 10px; background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; }
+    button:hover { border-color: var(--accent); }
     input[type=checkbox], input[type=radio] { accent-color: var(--accent); margin: 0; }
-    .field + .field { margin-top: 6px; }
+    input[type=text] { flex: 1; min-width: 0; background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; font: inherit; padding: 4px 8px; }
+    input:focus-visible, button:focus-visible, label:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    /* Згортні розділи: видно лише заголовок, клік розгортає */
+    section.acc { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 6px; }
+    .head { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 2px; background: none; border: 0; border-radius: 4px; text-align: left; font-size: 13px; font-weight: 600; color: var(--fg); }
+    .head:hover { color: var(--accent); border: 0; }
+    .head .arrow { width: 12px; color: var(--muted); flex: none; }
+    .head .ttl { flex: none; }
+    .head .sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; font-size: 11.5px; color: var(--muted); text-align: right; }
+    .body { padding: 6px 0 2px; }
+    .body[hidden] { display: none; }
     .opt { cursor: pointer; }
     .opt:has(input:checked) { border-color: var(--accent); }
-    textarea { width: 100%; min-height: 64px; resize: vertical; }
-    input:focus-visible, textarea:focus-visible, label:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    #hotkey { flex: 1; font-weight: 600; }
+
+    /* Випадаючий список мов */
+    .dd { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 6px 10px; text-align: left; }
+    .dd .cur { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ddlist { margin-top: 4px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 4px; max-height: 190px; overflow: auto; }
+    .ddlist[hidden] { display: none; }
+    .ddlist label { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 4px 6px; border-radius: 4px; cursor: pointer; }
+    .ddlist label:hover { background: rgba(127,127,127,.15); }
+    .tag { flex-basis: 100%; padding-left: 22px; font-size: 10.5px; color: var(--muted); line-height: 1.15; }
+
+    /* Списки сайтів і тригерів */
+    .addrow { display: flex; gap: 6px; }
+    .items { margin-top: 6px; }
+    .item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; margin-top: 4px; }
+    .item .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .del { background: none; border: 0; padding: 0 2px; font-size: 11.5px; color: var(--danger); text-decoration: underline; }
+    .del:hover { border: 0; }
+    .empty { color: var(--muted); font-size: 11.5px; padding: 4px 2px; }
+    .trig { margin-top: 6px; padding: 6px 8px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; }
+    .trig .top { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .trig .top .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .trig .rep { display: flex; align-items: flex-start; gap: 8px; margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--line); }
+    .trig .rep .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 400; }
+    .trig .addrow { margin-top: 6px; }
+    .hint { color: var(--muted); font-size: 11.5px; margin: 0 0 6px; }
     .note { color: var(--muted); font-size: 11.5px; margin: 10px 0 0; }
     #saved { color: var(--ok); min-height: 16px; margin-top: 6px; font-size: 11.5px; }
   </style>
@@ -46,26 +76,44 @@
     <span class="dot"></span><span>Підказки про розкладку</span><input type="checkbox" id="enabled">
   </label>
 
-  <section>
-    <h2 title="Що робити, коли програма вважає, що текст набрано не в тій розкладці">Коли знайдено помилку розкладки</h2>
-    <label class="field opt" title="Біля кінця тексту з'явиться напівпрозора кнопка «Можливо: Українська?». Клік по ній замінює текст"><input type="radio" name="mode" value="chip"><span>Показати кнопку біля тексту</span></label>
-    <label class="field opt" title="Текст перетворюється сам, одразу після паузи. З'являється кнопка «Скасувати» на 8 секунд, Ctrl+Z теж працює"><input type="radio" name="mode" value="auto"><span>Перетворювати автоматично</span></label>
+  <section class="acc" id="secMode">
+    <button type="button" class="head" aria-expanded="false" title="Що робити, коли програма вважає, що текст набрано не в тій розкладці"><span class="arrow">▸</span><span class="ttl">Коли знайдено помилку</span><span class="sum" id="sumMode"></span></button>
+    <div class="body" hidden>
+      <label class="field opt" title="Біля кінця тексту з'явиться напівпрозора кнопка з назвою мови, наприклад «Українська?». Клік по ній замінює текст"><input type="radio" name="mode" value="chip"><span>Показати кнопку біля тексту</span></label>
+      <label class="field opt" title="Текст перетворюється сам, одразу після паузи. З'являється кнопка скасування на 8 секунд, Ctrl+Z теж працює"><input type="radio" name="mode" value="auto"><span>Перетворювати автоматично</span></label>
+    </div>
   </section>
 
-  <section>
-    <h2 title="Оберіть щонайменше дві мови: ту, якою пишете, і ту, на яку розкладка могла лишитись помилково. Італійська, французька, німецька та іспанська експериментальні: їхні розкладки ще треба звірити з клавіатурою.">Мови, між якими перемикати</h2>
-    <div class="langs" id="langs" title="Оберіть щонайменше дві мови"></div>
+  <section class="acc" id="secKey">
+    <button type="button" class="head" aria-expanded="false" title="Виділіть текст, набраний не в тій розкладці, і натисніть цю клавішу: виділене перетвориться. Без виділення перетвориться весь текст у полі. Те саме робить Ctrl, утримуваний, коли відпускаєте кнопку миші після виділення. Також є пункт у меню правої кнопки миші"><span class="arrow">▸</span><span class="ttl">Гаряча клавіша</span><span class="sum" id="sumKey"></span></button>
+    <div class="body" hidden>
+      <div class="field"><span id="hotkey">…</span><button type="button" id="hotkeyBtn" title="Відкрити сторінку Chrome, де змінюють клавіші розширень">Змінити</button></div>
+    </div>
   </section>
 
-  <section>
-    <h2>Час і чутливість</h2>
-    <label class="row" title="Скільки секунд ви не друкуєте, перш ніж програма перевірить текст (від 1 до 10)"><span>Пауза перед перевіркою, с</span><input type="number" id="delaySec" min="1" max="10" step="0.5"></label>
-    <label class="row" title="Коротші тексти не перевіряються (від 3 до 30 літер)"><span>Мінімум літер у тексті</span><input type="number" id="minLetters" min="3" max="30" step="1"></label>
+  <section class="acc" id="secLangs">
+    <button type="button" class="head" aria-expanded="false" title="Оберіть щонайменше дві мови: ту, якою пишете, і ту, на яку розкладка могла лишитись помилково. Італійська, французька, німецька та іспанська експериментальні: їхні розкладки ще треба звірити з клавіатурою"><span class="arrow">▸</span><span class="ttl">Мови</span><span class="sum" id="sumLangs"></span></button>
+    <div class="body" hidden>
+      <button type="button" class="dd" id="ddBtn" title="Відкрити список мов"><span class="cur" id="ddCur"></span><span>▾</span></button>
+      <div class="ddlist" id="langs" hidden></div>
+    </div>
   </section>
 
-  <section>
-    <h2 title="Адреси сайтів, де підказки не потрібні, по одній у рядку, наприклад docs.google.com">Сайти-винятки</h2>
-    <textarea id="excluded" spellcheck="false" title="По одній адресі в рядку, наприклад docs.google.com"></textarea>
+  <section class="acc" id="secSites">
+    <button type="button" class="head" aria-expanded="false" title="Сайти, де підказки не потрібні"><span class="arrow">▸</span><span class="ttl">Сайти-винятки</span><span class="sum" id="sumSites"></span></button>
+    <div class="body" hidden>
+      <div class="addrow"><input type="text" id="siteInput" spellcheck="false" placeholder="docs.google.com" title="Адреса сайту без http://, наприклад docs.google.com"><button type="button" id="siteAdd" title="Додати сайт до винятків">Додати</button></div>
+      <div class="items" id="sites"></div>
+    </div>
+  </section>
+
+  <section class="acc" id="secTrig">
+    <button type="button" class="head" aria-expanded="false" title="Слово чи фраза, на які програма пропонує готові відповіді, коли ви виділяєте таке повідомлення на сторінці. Додати тригер можна й з меню правої кнопки миші"><span class="arrow">▸</span><span class="ttl">Тригери і відповіді</span><span class="sum" id="sumTrig"></span></button>
+    <div class="body" hidden>
+      <p class="hint">Виділіть на сторінці повідомлення зі словом-тригером: з'явиться кнопка з готовими відповідями.</p>
+      <div class="addrow"><input type="text" id="trigInput" spellcheck="false" placeholder="Слово чи фраза" title="Слово чи фраза, яку шукаємо у виділеному тексті"><button type="button" id="trigAdd" title="Додати тригер">Додати</button></div>
+      <div class="items" id="trigs"></div>
+    </div>
   </section>
 
   <p class="note">Текст нікуди не надсилається: усе відбувається на цьому комп'ютері.</p>
