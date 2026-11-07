@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Автоприховування при простої</title>
+  <style>
+    /* Палітра: світло-зелена вдень, темно-зелена вночі (за темою Windows/Chrome) */
+    :root {
+      color-scheme: light dark;
+      --bg: #dcefdc;
+      --fg: #1b3a26;
+      --muted: #4a6b55;
+      --field: #f1faf1;
+      --line: #98c1a1;
+      --accent: #2e7d4f;
+      --accent-fg: #f1fff5;
+      --ok: #1b7a3a;
+      --bad: #b00020;
+      --fill: #c4e5cb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #12231a;
+        --fg: #dcefe0;
+        --muted: #9db8a5;
+        --field: #1c3326;
+        --line: #335a41;
+        --accent: #5fbf86;
+        --accent-fg: #0d1c13;
+        --ok: #7bd88f;
+        --bad: #ff8a80;
+        --fill: #285238;
+      }
+    }
+    body { font-family: Segoe UI, Arial, sans-serif; width: 380px; margin: 0; padding: 10px; font-size: 13px; background: var(--bg); color: var(--fg); }
+    [hidden] { display: none !important; }
+    button { padding: 4px 10px; cursor: pointer; background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; }
+    button.main { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+    input, select { background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 3px; font: inherit; }
+    .sec { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
+    .sec > b { font-size: 14px; cursor: help; }
+    label { display: block; margin: 6px 0; }
+    select { width: 100%; margin-top: 4px; }
+    input[type=number] { width: 60px; }
+
+    .top { display: flex; align-items: flex-start; gap: 10px; }
+    .ind { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; cursor: help; }
+    .ind .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
+    .ind.on .dot { background: var(--ok); }
+    .ind.on #indText { font-weight: 600; }
+    #toggle { white-space: nowrap; }
+
+    #status { margin-top: 10px; white-space: pre-wrap; font-size: 12px; color: var(--muted); }
+    #saved { color: var(--ok); font-size: 12px; min-height: 16px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="ind off" id="indicator" title="Показує, чи працює автозгортання і через скільки хвилин простою воно спрацює">
+      <div><span class="dot"></span><span id="indText">Не активно</span></div>
+    </div>
+    <button id="toggle" class="main" title="Вимкнути або увімкнути автозгортання. Те, що вже згорнуто, при поверненні до ПК все одно повернеться">⏻ Вимкнути</button>
+  </div>
+
+  <div class="sec">
+    <b title="Що робити, коли ПК простоює">Згортання</b>
+    <label title="Скільки хвилин без руху миші й клавіатури має минути, перш ніж почнеться згортання">Простій, хвилин: <input type="number" id="idleMinutes" min="1" step="1"></label>
+    <label title="Групи вкладок стискаються до однієї мітки. Самі вкладки не закриваються"><input type="checkbox" id="collapseGroups"> Згортати групи вкладок</label>
+    <label title="Вікна Chrome згортаються на панель завдань"><input type="checkbox" id="minimizeWindows"> Згортати вікна Chrome</label>
+  </div>
+
+  <div class="sec">
+    <b title="Перед згортанням у кожному вікні відкривається вибрана вкладка">Перехід на вкладку</b>
+    <select id="switchMode" title="Вкладка, де йде відтворення, — та, що зараз видає звук. Якщо звуку ніде немає, відкривається крайня права вкладка. Група з такою вкладкою не згортається">
+      <option value="none">Не перемикати вкладку</option>
+      <option value="rightmost">Крайня права вкладка (поза групою)</option>
+      <option value="media">Вкладка, де йде відтворення (якщо немає, то крайня права)</option>
+    </select>
+  </div>
+
+  <div class="sec">
+    <b>Медіа</b>
+    <label title="Ставить на паузу звичайні відео й аудіо в усіх вкладках сайтів. Відтворення потім автоматично не вмикається. Для цього розширенню потрібен доступ до сайтів"><input type="checkbox" id="pauseMedia"> Ставити на паузу відео й аудіо при згортанні</label>
+  </div>
+
+  <div class="sec">
+    <b title="Що відбувається, коли ви повертаєтесь до ПК (рух миші, клавіатура)">Повернення</b>
+    <label title="Групи вкладок, згорнуті розширенням, розгортаються назад"><input type="checkbox" id="restoreGroups"> Відновлювати групи вкладок</label>
+    <label title="Вікна Chrome, згорнуті розширенням, повертаються в попередній стан (звичайне чи розгорнуте)"><input type="checkbox" id="restoreWindows"> Відновлювати вікно Chrome</label>
+    <label title="0 = завжди відновлювати. Якщо весь простій (час до згортання плюс час у згорнутому стані) не менший за це число хвилин, групи й вікна самі не повертаються">Не відновлювати, якщо простій довший за (хвилин, 0 = завжди відновлювати): <input type="number" id="noRestoreAfterMinutes" min="0" step="1"></label>
+  </div>
+
+  <div id="saved"></div>
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

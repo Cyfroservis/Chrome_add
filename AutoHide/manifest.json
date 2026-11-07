@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Автоприховування при простої",
+  "version": "1.1",
+  "description": "Згортає групи вкладок і вікна Chrome, коли ПК простоює. Може ставити медіа на паузу.",
+  "minimum_chrome_version": "109",
+  "permissions": [
+    "idle",
+    "tabGroups",
+    "storage",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Автоприховування",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "popup.html",
+    "open_in_tab": true
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}
