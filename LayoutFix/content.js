@@ -9,7 +9,7 @@
   const LFX = globalThis.LFX;
   if (!LFX) return;
 
-  const DEFAULTS = { enabled: true, langs: null, pauseSec: 0.8, minLetters: 5, excluded: '', mode: 'chip' };
+  const DEFAULTS = { enabled: true, langs: null, pauseSec: 0.8, minLetters: 5, excluded: '', mode: 'chip', triggers: [] };
   const MAX_TEXT = 3000; // довші тексти не аналізуємо
   const CHIP_MS = 20000; // скільки кнопка висить без відповіді
   const UNDO_MS = 8000; // скільки доступна кнопка «Скасувати»
@@ -32,6 +32,9 @@
     if (!Array.isArray(S.langs) || !S.langs.length) S.langs = defaultLangs();
     S.langs = S.langs.filter((l) => LFX.LAYOUTS[l]);
     if (S.mode !== 'auto') S.mode = 'chip';
+    S.pauseSec = DEFAULTS.pauseSec; // пауза і мінімум літер більше не налаштовуються: завжди типові значення
+    S.minLetters = DEFAULTS.minLetters;
+    if (!Array.isArray(S.triggers)) S.triggers = [];
   }
 
   function loadSettings() {
@@ -284,7 +287,7 @@
     const target = LFX.LAYOUTS[res.to].name;
     makeChip(
       el,
-      'Можливо: ' + target + '?',
+      target + '?',
       'Клік замінить текст на «' + short(res.text) + '». Esc ховає кнопку',
       false,
       () => { if (!applyConvert(el, original, res)) hideChip(); },
@@ -296,7 +299,7 @@
   function showUndo(el, original) {
     makeChip(
       el,
-      '↶ Скасувати',
+      '↶',
       'Повернути початковий текст (Ctrl+Z теж працює)',
       true,
       () => {
@@ -410,7 +413,7 @@
       return;
     }
     dismissed.set(el, getText(el));
-    makeChip(el, '↶ Скасувати', 'Повернути початковий текст (Ctrl+Z теж працює)', true, () => {
+    makeChip(el, '↶', 'Повернути початковий текст (Ctrl+Z теж працює)', true, () => {
       el.focus();
       document.execCommand('undo');
       dismissed.set(el, getText(el));
@@ -457,7 +460,7 @@
     }
     if (!ok) return false;
     dismissed.set(el, getText(el));
-    makeChip(el, '↶ Скасувати', 'Повернути початковий текст (Ctrl+Z теж працює)', true, () => {
+    makeChip(el, '↶', 'Повернути початковий текст (Ctrl+Z теж працює)', true, () => {
       el.focus();
       document.execCommand('undo');
       dismissed.set(el, getText(el));
@@ -491,7 +494,7 @@
     }
     makeChip(
       el,
-      'Можливо: ' + LFX.LAYOUTS[res.to].name + '?',
+      LFX.LAYOUTS[res.to].name + '?',
       'Клік замінить виділене на «' + short(res.text) + '». Esc ховає кнопку',
       false,
       () => {
@@ -601,22 +604,41 @@
   function pageSelection(stale) {
     const sel = window.getSelection();
     const text = sel && sel.rangeCount && !sel.isCollapsed ? sel.toString() : '';
-    if (!text.trim() || text.length > MAX_TEXT || S.langs.length < 2) {
+    if (!text.trim() || text.length > MAX_TEXT) {
       if (stale) hideChip();
       return;
     }
-    const res = LFX.analyze(text, S.langs, { minLetters: 3 });
-    if (!res) {
-      if (stale) hideChip();
-      return;
-    }
+    const res = S.langs.length >= 2 ? LFX.analyze(text, S.langs, { minLetters: 3 }) : null;
     const node = sel.anchorNode;
     const host = node instanceof Element ? node : node && node.parentElement;
     if (!host) return;
+    if (!res) {
+      // Хибної розкладки немає: можливо, у тексті є слово-тригер, тоді пропонуємо готові відповіді
+      const found = matchTriggers(text);
+      if (!found.length) {
+        if (stale) hideChip();
+        return;
+      }
+      makeChip(
+        host,
+        'Відповіді',
+        'Клік покаже готові відповіді на це повідомлення. Esc ховає кнопку',
+        false,
+        () => {
+          const r = selRect(host);
+          hideChip();
+          showReplies(r, found);
+        },
+        CHIP_MS,
+        null,
+        { kind: 'page' }
+      );
+      return;
+    }
     const name = LFX.LAYOUTS[res.to].name;
     makeChip(
       host,
-      'Можливо: ' + name + '?',
+      name + '?',
       'Клік покаже розшифрований текст у віконці. Esc ховає кнопку',
       false,
       () => {
@@ -633,6 +655,228 @@
       { kind: 'page' }
     );
   }
+
+  // ---------- Тригери і готові відповіді; меню правої кнопки миші ----------
+  const PANEL_CSS = `
+    .grp { margin-bottom: 6px; }
+    button.rep { display: block; width: 100%; text-align: left; margin: 0 0 4px; padding: 4px 8px; border-radius: 6px;
+      font-weight: normal; white-space: normal; word-break: break-word; line-height: 1.3; }
+    textarea { display: block; width: 100%; min-height: 56px; box-sizing: border-box; resize: vertical; margin-bottom: 6px; padding: 5px 8px;
+      font: 13px/1.35 "Segoe UI", Arial, sans-serif; color: #fff; background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.35); border-radius: 6px; }
+    textarea:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+  `;
+  let lastEditable = null; // останнє поле вводу, куди користувач клікав: туди вставляються відповіді
+
+  document.addEventListener('focusin', (e) => {
+    const t = e.composedPath ? e.composedPath()[0] : e.target;
+    const el = editableOf(t);
+    if (el) lastEditable = el;
+  }, true);
+
+  function selRect(fallbackEl) {
+    try {
+      const s = window.getSelection();
+      if (s && s.rangeCount && !s.isCollapsed) {
+        const rs = s.getRangeAt(0).getClientRects();
+        if (rs.length) return rs[rs.length - 1];
+      }
+    } catch (e) {}
+    const el = fallbackEl || document.activeElement;
+    if (el && el.getBoundingClientRect) return el.getBoundingClientRect();
+    return { left: 20, top: 20, bottom: 20 };
+  }
+
+  // Тригери, слово яких є у тексті (і для яких задано хоч одну відповідь)
+  function matchTriggers(text) {
+    const low = String(text).toLowerCase();
+    return (S.triggers || []).filter((t) => t && typeof t.w === 'string' && t.w && Array.isArray(t.r) && t.r.length && low.indexOf(t.w.toLowerCase()) >= 0);
+  }
+
+  // Загальне віконце: caption, вузли з вмістом і кнопка «Закрити»
+  function showPanel(anchor, caption, nodes) {
+    hideBubble();
+    const host = document.createElement('div');
+    const root = host.attachShadow({ mode: 'closed' });
+    const style = document.createElement('style');
+    style.textContent = BUBBLE_CSS + PANEL_CSS;
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.setAttribute('role', 'dialog');
+    ['keydown', 'keyup', 'keypress'].forEach((n) => box.addEventListener(n, (e) => { if (e.key !== 'Escape') e.stopPropagation(); }));
+    if (caption) {
+      const cap = document.createElement('div');
+      cap.className = 'cap';
+      cap.textContent = caption;
+      box.appendChild(cap);
+    }
+    nodes.forEach((n) => box.appendChild(n));
+    const row = document.createElement('div');
+    row.className = 'row';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'sec';
+    close.textContent = 'Закрити';
+    close.addEventListener('click', hideBubble);
+    row.appendChild(close);
+    box.appendChild(row);
+    root.appendChild(style);
+    root.appendChild(box);
+    (document.documentElement || document.body).appendChild(host);
+    const bw = box.getBoundingClientRect();
+    const x = Math.max(8, Math.min(anchor.left, window.innerWidth - bw.width - 8));
+    let y = anchor.bottom + 6;
+    if (y + bw.height > window.innerHeight - 8) y = Math.max(8, anchor.top - bw.height - 6);
+    box.style.left = Math.round(x) + 'px';
+    box.style.top = Math.round(y) + 'px';
+    bubble = { host: host, timer: setTimeout(hideBubble, 60000) };
+    return box;
+  }
+
+  function textNode(t) {
+    const d = document.createElement('div');
+    d.className = 'res';
+    d.textContent = t;
+    return d;
+  }
+
+  // Вставляє відповідь у останнє поле вводу; якщо поля немає, копіює в буфер обміну
+  function insertReply(text) {
+    const el = lastEditable;
+    if (el && el.isConnected) {
+      let ok = false;
+      try {
+        el.focus();
+        ok = document.execCommand('insertText', false, text);
+      } catch (e) {}
+      if (!ok && 'value' in el) {
+        try {
+          el.setRangeText(text, el.selectionStart, el.selectionEnd, 'end');
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          ok = true;
+        } catch (e) {}
+      }
+      if (ok) return Promise.resolve('inserted');
+    }
+    return copyText(text).then((ok) => (ok ? 'copied' : 'fail'));
+  }
+
+  function showReplies(anchor, found) {
+    if (!found.length) {
+      showPanel(anchor, '', [textNode('Для цього тексту немає тригерів з відповідями. Додайте слово через пункт меню «Додати виділене як тригер відповідей».')]);
+      return;
+    }
+    const nodes = found.map((tr) => {
+      const g = document.createElement('div');
+      g.className = 'grp';
+      const c = document.createElement('div');
+      c.className = 'cap';
+      c.textContent = 'Тригер «' + tr.w + '»:';
+      g.appendChild(c);
+      tr.r.forEach((r) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'rep';
+        b.textContent = r;
+        b.title = 'Вставити у поле вводу (якщо поля немає, текст копіюється)';
+        b.addEventListener('click', () => {
+          insertReply(r).then((how) => {
+            b.textContent = how === 'inserted' ? 'Вставлено ✓' : how === 'copied' ? 'Скопійовано ✓' : 'Не вдалося вставити';
+            setTimeout(hideBubble, 700);
+          });
+        });
+        g.appendChild(b);
+      });
+      return g;
+    });
+    showPanel(anchor, 'Готові відповіді', nodes);
+  }
+
+  // Зберігає тригер (і, якщо задано, відповідь) у сховищі розширення
+  function saveTrigger(word, reply) {
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get({ triggers: [] }, (s) => {
+          const list = Array.isArray(s.triggers) ? s.triggers.slice() : [];
+          let t = list.find((x) => x && typeof x.w === 'string' && x.w.toLowerCase() === word.toLowerCase());
+          if (!t) {
+            t = { w: word, r: [] };
+            list.push(t);
+          }
+          if (!Array.isArray(t.r)) t.r = [];
+          if (reply && t.r.indexOf(reply) < 0) t.r.push(reply.slice(0, 1000));
+          chrome.storage.local.set({ triggers: list }, () => resolve(true));
+        });
+      } catch (e) {
+        resolve(false);
+      }
+    });
+  }
+
+  function showAddTrigger(anchor, raw) {
+    const word = String(raw || '').replace(/\s+/g, ' ').trim();
+    if (!word) return;
+    if (word.length > 80) {
+      showPanel(anchor, '', [textNode('Тригер має бути коротшим за 80 символів: виділіть слово чи коротку фразу.')]);
+      return;
+    }
+    saveTrigger(word, '');
+    const ta = document.createElement('textarea');
+    ta.placeholder = 'Готова відповідь на це слово';
+    ta.title = 'Текст, який можна буде вставити одним кліком';
+    const status = document.createElement('div');
+    status.className = 'cap';
+    status.textContent = 'Тригер збережено. Додайте готову відповідь (можна кілька).';
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.textContent = 'Додати відповідь';
+    add.addEventListener('click', () => {
+      const v = ta.value.trim();
+      if (!v) return;
+      saveTrigger(word, v).then((ok) => {
+        status.textContent = ok ? 'Відповідь додано ✓' : 'Не вдалося зберегти';
+        ta.value = '';
+      });
+    });
+    const wrap = document.createElement('div');
+    wrap.appendChild(ta);
+    wrap.appendChild(add);
+    wrap.style.marginBottom = '8px';
+    const box = showPanel(anchor, 'Тригер: «' + word + '»', [status, wrap]);
+    try { ta.focus(); } catch (e) {}
+    return box;
+  }
+
+  function ctxConvert(text) {
+    if (!S.enabled) return;
+    const el = activeEditable();
+    if (el && readSelection(el).text) {
+      convertSelection();
+      return;
+    }
+    const anchor = selRect();
+    const t = String(text || '').trim();
+    if (!t || t.length > MAX_TEXT) return;
+    if (S.langs.length < 2) {
+      showPanel(anchor, '', [textNode('Увімкніть щонайменше дві мови в налаштуваннях.')]);
+      return;
+    }
+    const res = forcedConvert(t, S.langs);
+    if (!res) {
+      showPanel(anchor, '', [textNode('Не вдалося перетворити цей текст.')]);
+      return;
+    }
+    showBubble(anchor, res.text, LFX.LAYOUTS[res.to].name);
+  }
+
+  try {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (!msg) return;
+      if (msg.type === 'ctx-convert') ctxConvert(msg.text);
+      else if (msg.type === 'ctx-replies') showReplies(selRect(), matchTriggers(String(msg.text || '')));
+      else if (msg.type === 'ctx-trigger') showAddTrigger(selRect(), msg.text);
+    });
+  } catch (e) {}
 
   // Клік поза віконцем закриває його
   document.addEventListener('mousedown', (e) => {
@@ -651,6 +895,7 @@
     scheduleSelCheck(e.ctrlKey);
   }, true);
   document.addEventListener('keyup', (e) => {
+    if (bubble && e.composedPath().indexOf(bubble.host) !== -1) return; // друк у нашому віконці
     // Виділення з клавіатури: Shift + стрілки, Ctrl + A
     if (e.shiftKey || e.key === 'Shift' || (e.ctrlKey && e.code === 'KeyA')) scheduleSelCheck(false);
   }, true);

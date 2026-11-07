@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Виправлення розкладки",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Підказує перетворити текст, набраний не в тій розкладці клавіатури. Цифросервіс, Сивак М. В.",
   "minimum_chrome_version": "109",
-  "permissions": ["storage"],
+  "permissions": ["storage", "contextMenus"],
   "background": {
     "service_worker": "background.js"
   },

@@ -58,3 +58,4 @@
 - 2026-11-07 zannamaksimuk — заголовок PROJECT_RULES.md зроблено загальним для всіх розширень (AutoHide, LayoutFix, SiteClicker); правила не змінювались
 - 2026-11-07 zannamaksimuk — додано в правила розділи: «Спільні правила інтерфейсу» (правила меню від власника діють для всіх розширень), «Перенесення напрацювань між розширеннями», «Авторство» (підпис нових файлів)
 - 2026-11-07 zannamaksimuk — LayoutFix оновлено до v0.1.7 за файлами власника; НЕ ПЕРЕВІРЕНО: options.js не відповідає options.html (див. LayoutFix/CHANGELOG.md); попередня v0.1.3 у тезі backup-LayoutFix-v0.1.3
+- 2026-11-07 zannamaksimuk — LayoutFix оновлено до v0.1.8: набір узгоджений (options.js відповідає options.html, є contextMenus), додано LayoutFix_test.js; перевірено синтаксис і тест у node, у живому Chrome не перевірено
