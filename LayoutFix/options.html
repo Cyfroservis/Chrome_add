@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- Автор: Сивак Микола Володимирович, +380961179898, Цифросервіс -->
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Виправлення розкладки: налаштування</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #dcefdc; --fg: #1b3a26; --muted: #4a6b55; --field: #eaf6ea; --line: #98c1a1; --accent: #2e7d4f; --accent-fg: #f1fff5; --ok: #1b7a3a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #12231a; --fg: #dcefe0; --muted: #9db8a5; --field: #1a3024; --line: #335a41; --accent: #5fbf86; --accent-fg: #0d1c13; --ok: #7bd88f; }
+    }
+    * { box-sizing: border-box; }
+    body { font: 12.5px/1.4 "Segoe UI", system-ui, Arial, sans-serif; background: var(--bg); color: var(--fg); width: 340px; margin: 0 auto; padding: 10px; }
+    h1 { font-size: 13.5px; margin: 0 0 8px; }
+    h2 { font-size: 13px; margin: 0 0 6px; }
+    section { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+    .field { display: flex; align-items: center; gap: 8px; background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; margin: 0; }
+    .status { cursor: pointer; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+    .status:has(input:checked) .dot { background: var(--accent); }
+    .status span:last-child { flex: 1; }
+    .langs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    .langs label { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; margin: 0; cursor: pointer; }
+    .langs label:has(input:checked) { border-color: var(--accent); }
+    .tag { flex-basis: 100%; padding-left: 20px; font-size: 10.5px; color: var(--muted); line-height: 1.15; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; }
+    input[type=number], textarea { background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; font: inherit; padding: 4px 8px; }
+    input[type=number] { width: 58px; }
+    input[type=checkbox], input[type=radio] { accent-color: var(--accent); margin: 0; }
+    .field + .field { margin-top: 6px; }
+    .opt { cursor: pointer; }
+    .opt:has(input:checked) { border-color: var(--accent); }
+    textarea { width: 100%; min-height: 64px; resize: vertical; }
+    input:focus-visible, textarea:focus-visible, label:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .note { color: var(--muted); font-size: 11.5px; margin: 10px 0 0; }
+    #saved { color: var(--ok); min-height: 16px; margin-top: 6px; font-size: 11.5px; }
+  </style>
+</head>
+<body>
+  <h1>Виправлення розкладки</h1>
+
+  <label class="field status" title="Вимкнути або ввімкнути підказки на всіх сайтах одразу">
+    <span class="dot"></span><span>Підказки про розкладку</span><input type="checkbox" id="enabled">
+  </label>
+
+  <section>
+    <h2 title="Що робити, коли програма вважає, що текст набрано не в тій розкладці">Коли знайдено помилку розкладки</h2>
+    <label class="field opt" title="Біля кінця тексту з'явиться напівпрозора кнопка «Можливо: Українська?». Клік по ній замінює текст"><input type="radio" name="mode" value="chip"><span>Показати кнопку біля тексту</span></label>
+    <label class="field opt" title="Текст перетворюється сам, одразу після паузи. З'являється кнопка «Скасувати» на 8 секунд, Ctrl+Z теж працює"><input type="radio" name="mode" value="auto"><span>Перетворювати автоматично</span></label>
+  </section>
+
+  <section>
+    <h2 title="Оберіть щонайменше дві мови: ту, якою пишете, і ту, на яку розкладка могла лишитись помилково. Італійська, французька, німецька та іспанська експериментальні: їхні розкладки ще треба звірити з клавіатурою.">Мови, між якими перемикати</h2>
+    <div class="langs" id="langs" title="Оберіть щонайменше дві мови"></div>
+  </section>
+
+  <section>
+    <h2>Час і чутливість</h2>
+    <label class="row" title="Скільки секунд ви не друкуєте, перш ніж програма перевірить текст (від 1 до 10)"><span>Пауза перед перевіркою, с</span><input type="number" id="delaySec" min="1" max="10" step="0.5"></label>
+    <label class="row" title="Коротші тексти не перевіряються (від 3 до 30 літер)"><span>Мінімум літер у тексті</span><input type="number" id="minLetters" min="3" max="30" step="1"></label>
+  </section>
+
+  <section>
+    <h2 title="Адреси сайтів, де підказки не потрібні, по одній у рядку, наприклад docs.google.com">Сайти-винятки</h2>
+    <textarea id="excluded" spellcheck="false" title="По одній адресі в рядку, наприклад docs.google.com"></textarea>
+  </section>
+
+  <p class="note">Текст нікуди не надсилається: усе відбувається на цьому комп'ютері.</p>
+  <div id="saved" role="status"></div>
+  <script src="layouts.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
