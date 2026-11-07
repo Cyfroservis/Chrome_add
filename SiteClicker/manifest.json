@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Клікер по сайтах",
+  "version": "1.0",
+  "description": "Записує послідовність кліків на сторінці і виконує її за розкладом.",
+  "minimum_chrome_version": "109",
+  "permissions": ["storage", "alarms", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Клікер по сайтах",
+    "default_popup": "popup.html"
+  }
+}

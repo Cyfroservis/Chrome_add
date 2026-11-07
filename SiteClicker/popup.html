@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<!-- Автор: Сивак Микола Володимирович, Цифросервіс, +380961179898 -->
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Клікер по сайтах</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #e8dccb;
+      --fg: #3b2a1e;
+      --muted: #6b5644;
+      --field: #f6efe4;
+      --line: #b9a68e;
+      --accent: #6f4e37;
+      --accent-fg: #fff7ec;
+      --ok: #2e7d32;
+      --bad: #b00020;
+      --fill: #f4d9a6;
+      --site: #0b5cad;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #2b2119;
+        --fg: #efe5d8;
+        --muted: #b9a893;
+        --field: #3a2e24;
+        --line: #5a4a3b;
+        --accent: #c9a27a;
+        --accent-fg: #2b2119;
+        --ok: #7bd88f;
+        --bad: #ff8a80;
+        --fill: #66502f;
+        --site: #7cc0ff;
+      }
+    }
+    body { font-family: Segoe UI, Arial, sans-serif; width: 380px; margin: 0; padding: 10px; font-size: 13px; background: var(--bg); color: var(--fg); }
+    [hidden] { display: none !important; }
+    button { padding: 4px 10px; cursor: pointer; background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; }
+    button.main { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+    input, select, textarea { background: var(--field); color: var(--fg); border: 1px solid var(--line); border-radius: 3px; font: inherit; }
+    .hint { color: var(--muted); font-size: 12px; margin: 3px 0; }
+    .sec { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 10px; }
+    .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .sec-head b { font-size: 14px; }
+
+    .top { display: flex; align-items: flex-start; gap: 10px; }
+    .ind { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+    .ind .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
+    .ind.on .dot { background: var(--ok); }
+    .ind.on #indText { font-weight: 600; }
+    .ind #next { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    #runNow { white-space: nowrap; }
+
+    .tabline { margin-top: 8px; }
+    #tabSite { color: var(--site); font-size: 14px; }
+    #tab { width: 100%; margin-top: 4px; }
+
+    .sechead { display: flex; gap: 6px; align-items: baseline; cursor: pointer; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
+    .sechead.filled { background: var(--fill); color: var(--fg); }
+    .sechead b { font-size: 14px; }
+    .sechead .tp { flex: 1; text-align: right; color: var(--muted); font-size: 12px; }
+
+    #stepsSum { margin-top: 6px; }
+
+    .txtrow { margin: 6px 0; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
+    .txtrow.filled, .txtrow.filled textarea { background: var(--fill); }
+    .txthead { display: flex; gap: 8px; align-items: baseline; padding: 5px 8px; cursor: pointer; }
+    .txthead .tl { font-weight: 600; }
+    .txthead .tp { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+    .txthead .del { color: var(--bad); font-size: 12px; text-decoration: underline; }
+    .txtrow textarea { display: block; width: 100%; box-sizing: border-box; resize: vertical; border: 0; border-top: 1px dashed var(--line); border-radius: 0 0 4px 4px; padding: 6px 8px; }
+
+    #schedForm label { display: block; margin: 6px 0; }
+    #schedForm select { width: 100%; margin-top: 4px; }
+    #schedForm input[type=number] { width: 60px; }
+    .days label { display: inline-block !important; margin: 2px 8px 2px 0 !important; }
+    #save { margin-top: 6px; }
+    .applyrow { margin: 2px 0 6px; }
+    .ok { color: var(--ok); margin-left: 8px; font-size: 12px; font-weight: 600; }
+
+    #status { margin-top: 10px; white-space: pre-wrap; font-size: 12px; }
+    #err { color: var(--bad); margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="ind off" id="indicator" title="Стан клікера в поточний момент">
+      <div><span class="dot"></span><span id="indText">Не активно</span></div>
+      <div id="next" hidden></div>
+    </div>
+    <button id="runNow" title="Виконати записану послідовність кліків одразу, не чекаючи розкладу">▶ Запустити зараз</button>
+  </div>
+
+  <div class="tabline">
+    <span>Вкладка, на якій виконувати:</span> <b id="tabSite"></b>
+    <select id="tab" title="Сторінка, на якій клікер виконуватиме кліки."></select>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head">
+      <b>Кроки</b>
+      <button id="record" class="main" title="Почати запис кліків на обраній вкладці. Новий запис замінює попередній">● Записати</button>
+    </div>
+    <div id="stepsSum"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sechead" id="textsHead" title="Подивитись тексти заготовки">
+      <span id="textsArrow">▸</span><b>Текст для введення</b><span class="tp" id="textsSum"></span>
+    </div>
+    <div id="textsBody" hidden>
+    <div class="hint">Клікніть на рядок, щоб вписати текст (до трьох). Заповнений текст підсвічується і вставляється з натисканням Enter. Порожній не використовується.</div>
+    <div class="txtrow" id="row1">
+      <div class="txthead" id="head1"><span class="tl">Текст 1</span><span class="tp" id="prev1"></span><span class="del" id="del1" hidden>видалити</span></div>
+      <textarea id="txt1" rows="3" hidden></textarea>
+    </div>
+    <div class="txtrow" id="row2">
+      <div class="txthead" id="head2"><span class="tl">Текст 2</span><span class="tp" id="prev2"></span><span class="del" id="del2" hidden>видалити</span></div>
+      <textarea id="txt2" rows="3" hidden></textarea>
+    </div>
+    <div class="txtrow" id="row3">
+      <div class="txthead" id="head3"><span class="tl">Текст 3</span><span class="tp" id="prev3"></span><span class="del" id="del3" hidden>видалити</span></div>
+      <textarea id="txt3" rows="3" hidden></textarea>
+    </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <b>Розклад</b>
+    <div id="schedForm">
+      <label>Режим:
+        <select id="mode" title="Розклад роботи клікера">
+          <option value="interval">Кожні N хвилин</option>
+          <option value="once">Один раз у вказаний час</option>
+          <option value="weekly">По днях тижня</option>
+          <option value="monthly">Щомісяця в певне число</option>
+        </select>
+      </label>
+
+      <div id="fStart" hidden>
+        <label><span id="startLabel">Дата й час</span>: <input type="datetime-local" id="startAt"></label>
+        <div class="applyrow"><button type="button" id="applyStart">Застосувати</button><span class="ok" id="okStart"></span></div>
+      </div>
+
+      <div id="fWeekly" class="days" hidden>
+        <label><input type="checkbox" id="wd1"> Пн</label><label><input type="checkbox" id="wd2"> Вт</label><label><input type="checkbox" id="wd3"> Ср</label><label><input type="checkbox" id="wd4"> Чт</label><label><input type="checkbox" id="wd5"> Пт</label><label><input type="checkbox" id="wd6"> Сб</label><label><input type="checkbox" id="wd0"> Нд</label>
+      </div>
+
+      <div id="fMonthly" hidden>
+        <label>Число місяця (1–31): <input type="number" id="monthDay" min="1" max="31" value="1"></label>
+        <div class="hint">Якщо в місяці менше днів (наприклад, 31 у листопаді), виконається в останній день місяця.</div>
+      </div>
+
+      <div id="fTime" hidden>
+        <label>Час: <input type="time" id="time" value="09:00"></label>
+        <div class="applyrow"><button type="button" id="applyTime">Застосувати</button><span class="ok" id="okTime"></span></div>
+      </div>
+
+      <div id="fInterval" hidden>
+        <label>Повторювати кожні <input type="number" id="repeatMin" min="1" step="1" value="60"> хв</label>
+      </div>
+
+      <button id="save" class="main">Зберегти й увімкнути</button>
+      <div class="hint" id="saveHint">Розклад діятиме після натискання цієї кнопки</div>
+    </div>
+  </div>
+
+  <div id="status"></div>
+  <div id="err"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
