@@ -1,4 +1,6 @@
-# PROJECT_RULES — Chrome_add (Автоприховування при простої)
+# PROJECT_RULES — Chrome_add (Chrome-розширення: AutoHide, LayoutFix, SiteClicker)
+
+Правила нижче спільні для всіх розширень репо. Кожне розширення лежить у власній папці зі своїм CHANGELOG.md.
 
 ## Правила роботи з Git (кілька сесій Claude, сесія може обірватись)
 1. На старті: `git pull`, прочитати цей файл повністю.
@@ -33,3 +35,4 @@
 - 2026-11-07 zannamaksimuk — додано LayoutFix (v0.1.3) в окрему папку з CHANGELOG.md; корінь репо (старе «Автоприховування», v1.0) не чіпав, чекаю нову версію від користувача
 - 2026-11-07 zannamaksimuk — додано AutoHide (v1.1) в окрему папку з CHANGELOG.md; застарілу v1.0 з кореня репо замінено (options.html/options.js прибрано, налаштування тепер у popup.html). Корінь репо чистий: лише PROJECT_RULES.md і папки розширень
 - 2026-11-07 zannamaksimuk — додано SiteClicker (v1.0) в окрему папку з CHANGELOG.md
+- 2026-11-07 zannamaksimuk — заголовок PROJECT_RULES.md зроблено загальним для всіх розширень (AutoHide, LayoutFix, SiteClicker); правила не змінювались
