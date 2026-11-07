@@ -31,3 +31,4 @@
 - 2026-10-28 maidenkm — створено PROJECT_RULES.md (правила роботи + граблі Chrome MV3)
 - 2026-10-28 maidenkm — додано правило про папки розширень і CHANGELOG.md у кожній
 - 2026-11-07 zannamaksimuk — додано LayoutFix (v0.1.3) в окрему папку з CHANGELOG.md; корінь репо (старе «Автоприховування», v1.0) не чіпав, чекаю нову версію від користувача
+- 2026-11-07 zannamaksimuk — додано AutoHide (v1.1) в окрему папку з CHANGELOG.md; застарілу v1.0 з кореня репо замінено (options.html/options.js прибрано, налаштування тепер у popup.html). Корінь репо чистий: лише PROJECT_RULES.md і папки розширень
